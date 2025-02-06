@@ -49,20 +49,20 @@ const Calendar = () => {
   return (
     <div className="max-w-lg mx-auto mt-10 bg-white-100 shadow-lg rounded-lg p-5">
       {/* Calendar Header */}
-      <div className="flex justify-between items-center mb-4">
-        <button onClick={prevYear} className="px-3 py-1 bg-gray-200 rounded">
+      <div className="flex justify-between items-center mb-4 bg-gray-200 rounded p-2">
+        <button onClick={prevYear} className="px-3 py-1  bg-gray-400 rounded cursor-pointer">
           «
         </button>
-        <button onClick={prevMonth} className="px-3 py-1 bg-gray-200 rounded">
+        <button onClick={prevMonth} className="px-3 py-1 bg-gray-300 rounded-full cursor-pointer hover:bg-gray-400 ">
           ‹
         </button>
         <h2 className="text-xl font-bold">
           {format(currentDate, "MMMM yyyy")}
         </h2>
-        <button onClick={nextMonth} className="px-3 py-1 bg-gray-200 rounded">
+        <button onClick={nextMonth} className="px-3 py-1 bg-gray-300 rounded-full cursor-pointer hover:bg-gray-400">
           ›
         </button>
-        <button onClick={nextYear} className="px-3 py-1 bg-gray-200 rounded">
+        <button onClick={nextYear} className="px-3 py-1 bg-gray-400 rounded cursor-pointer">
           »
         </button>
       </div>
@@ -78,22 +78,25 @@ const Calendar = () => {
 
       {/* Calendar Grid */}
       <div className="grid grid-cols-7 gap-1 text-center">
-        {days.map((day) => (
-          <div
-            key={day}
-            className={`py-2 ${
-              format(day, "MM") === format(currentDate, "MM")
-                ? "text-black"
-                : "text-gray-400"
-            } ${
-              format(day, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd")
-                ? "bg-blue-500 text-white rounded-full"
-                : ""
-            }`}
-          >
-            {format(day, "d")}
-          </div>
-        ))}
+        {days.map((day) => {
+          const dayNumber = format(day, "d");
+          const isCurrentMonth = format(day, "MM") === format(currentDate, "MM");
+          const isToday = format(day, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd");
+          const hasBackUP = ["5", "15", "25"].includes(dayNumber);
+
+          return (
+            <div
+              key={day}
+              className={`py-2 rounded-full ${
+                isToday ? "bg-amber-400 text-white" : 
+                hasBackUP ? "bg-green-300 text-white" : 
+                isCurrentMonth ? "text-black" : "text-gray-400"
+              }`}
+            >
+              {dayNumber}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
