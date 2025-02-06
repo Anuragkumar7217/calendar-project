@@ -1,16 +1,5 @@
 import React, { useState } from "react";
-import {
-  format,
-  addMonths,
-  subMonths,
-  addYears,
-  subYears,
-  startOfMonth,
-  endOfMonth,
-  startOfWeek,
-  endOfWeek,
-  eachDayOfInterval,
-} from "date-fns";
+import { format, addMonths, subMonths, addYears, subYears, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval } from "date-fns";
 
 const Calendar = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -47,7 +36,7 @@ const Calendar = () => {
   const days = eachDayOfInterval({ start: startWeek, end: endWeek });
 
   return (
-    <div className="max-w-lg mx-auto mt-10 bg-white-100 shadow-lg rounded-lg p-5">
+    <div className="max-w-lg mx-auto mt-15 bg-white-100 border shadow-2xl rounded-lg p-5">
       {/* Calendar Header */}
       <div className="flex justify-between items-center mb-4 bg-gray-200 rounded p-2">
         <button onClick={prevYear} className="px-3 py-1  bg-gray-400 rounded cursor-pointer">
