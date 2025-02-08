@@ -13,12 +13,12 @@ const Modal = ({ selectedDate, closeModal }) => {
         <button className="px-4 py-2 bg-green-500 text-white rounded mr-2 hover:bg-green-700">
           Restore Data
         </button>
-        <button className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-700">
+        <button className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700">
           Backup Now
         </button>
         <div className="mt-4">
           <button
-            className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-700"
+            className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-700"
             onClick={closeModal}
           >
             Close
