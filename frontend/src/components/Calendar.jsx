@@ -11,6 +11,7 @@ import {
   eachDayOfInterval,
 } from "date-fns";
 import React, { useEffect, useState } from "react";
+import Modal from "./Modal";
 //import useStore from "../store/useStore";
 //import DateButton from "./DateButton";
 
@@ -133,35 +134,7 @@ const Calendar = () => {
       </div>
 
       {/* Modal Popup */}
-      {selectedDate && (
-        <div
-          className="fixed inset-0 flex items-center justify-center bg-black/70 "
-          onClick={closeModal} // Clicking on background closes modal
-        >
-          <div
-            className="bg-white p-6 rounded-lg shadow-lg text-center"
-            onClick={(e) => e.stopPropagation()} // Prevents closing when clicking inside modal
-          >
-            <h2 className="text-lg font-semibold mb-4">
-              Options for {format(selectedDate, "PPP")}
-            </h2>
-            <button className="px-4 py-2 bg-green-500 text-white rounded mr-2 hover:bg-green-700">
-              Restore Data
-            </button>
-            <button className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-700">
-              Backup Now
-            </button>
-            <div className="mt-4">
-              <button
-                className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-700"
-                onClick={closeModal} // Close button inside modal
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <Modal selectedDate={selectedDate} closeModal={closeModal} />
     </div>
   );
 };
