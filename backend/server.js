@@ -11,7 +11,7 @@ const BACKUP_DIR = path.join(__dirname, "backup");
 // MongoDB tools paths
 const MONGO_DUMP_PATH = `"C:\\Program Files\\MongoDB\\tools\\mongodb-database-tools-windows-x86_64-100.11.0\\bin\\mongodump.exe"`;
 const MONGO_RESTORE_PATH = `"C:\\Program Files\\MongoDB\\tools\\mongodb-database-tools-windows-x86_64-100.11.0\\bin\\mongorestore.exe"`;
-const MONGO_URI = `"mongodb://localhost:27017/WanderLust"`; // Wrapped in quotes
+const MONGO_URI = `"mongodb://localhost:27017"`; // Wrapped in quotes
 
 app.use(cors());
 app.use(express.json());
