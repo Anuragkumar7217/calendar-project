@@ -1,3 +1,4 @@
+require("dotenv").config(); // Load environment variables from .env
 const express = require("express");
 const cors = require("cors");
 const fs = require("fs");
@@ -8,10 +9,10 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const BACKUP_DIR = path.join(__dirname, "backup");
 
-// MongoDB tools paths
-const MONGO_DUMP_PATH = `"C:\\Program Files\\MongoDB\\tools\\mongodb-database-tools-windows-x86_64-100.11.0\\bin\\mongodump.exe"`;
-const MONGO_RESTORE_PATH = `"C:\\Program Files\\MongoDB\\tools\\mongodb-database-tools-windows-x86_64-100.11.0\\bin\\mongorestore.exe"`;
-const MONGO_URI = `"mongodb://localhost:27017"`; // Wrapped in quotes
+// MongoDB tools paths (Loaded from .env)
+const MONGO_DUMP_PATH = `"${process.env.MONGO_DUMP_PATH}"`;
+const MONGO_RESTORE_PATH = `"${process.env.MONGO_RESTORE_PATH}"`;
+const MONGO_URI = `"${process.env.MONGO_URI}"`; // Wrapped in quotes
 
 app.use(cors());
 app.use(express.json());
@@ -41,10 +42,10 @@ app.post("/api/backup/:date", (req, res) => {
   const { date } = req.params;
   try {
     const backupPath = path.join(BACKUP_DIR, `backup-${date}`);
-    
+
     // Wrap in quotes to handle spaces
     const cmd = `${MONGO_DUMP_PATH} --uri=${MONGO_URI} --out "${backupPath}"`;
-    
+
     execSync(cmd);
     res.json({ message: `Backup taken for ${date}` });
   } catch (error) {
@@ -58,7 +59,7 @@ app.post("/api/restore/:date", (req, res) => {
   const { date } = req.params;
   try {
     const restorePath = path.join(BACKUP_DIR, `backup-${date}`);
-    
+
     if (!fs.existsSync(restorePath)) {
       return res.status(404).json({ error: "Backup not found" });
     }
