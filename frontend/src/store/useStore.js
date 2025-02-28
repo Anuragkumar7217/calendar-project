@@ -1,15 +1,22 @@
-import { create } from "zustand";
+import { create } from "zustand"; // ✅ Ensure Zustand is imported
 
-const API_BASE_URL = "http://localhost:5000/api";
+// ✅ Use `import.meta.env` for Vite compatibility
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+
+// Retrieve backupDates from localStorage (Ensure it is always an array)
+const storedBackupDates = JSON.parse(localStorage.getItem("backupDates")) || [];
 
 const useStore = create((set) => ({
   selectedDate: null,
-  isBackupInProgress: false,
+  isBackupInProgress: JSON.parse(localStorage.getItem("isBackupInProgress")) || false,
   backupStatus: "",
-  backupDates: new Set(JSON.parse(localStorage.getItem("backupDates")) || []),
+  backupDates: new Set(storedBackupDates), // Initialize Set from localStorage
 
   setSelectedDate: (date) => set({ selectedDate: date }),
-  setBackupInProgress: (status) => set({ isBackupInProgress: status }),
+  setBackupInProgress: (status) => {
+    localStorage.setItem("isBackupInProgress", JSON.stringify(status));
+    set({ isBackupInProgress: status });
+  },
   setBackupStatus: (status) => set({ backupStatus: status }),
 
   fetchBackupDates: async () => {
@@ -18,7 +25,6 @@ const useStore = create((set) => ({
       const data = await response.json();
       if (data.backups) {
         const formattedDates = new Set(data.backups.map((file) => file.replace("backup-", "")));
-
         localStorage.setItem("backupDates", JSON.stringify([...formattedDates]));
         set({ backupDates: formattedDates });
       }
@@ -35,9 +41,7 @@ const useStore = create((set) => ({
 
       if (data.message) {
         set((state) => {
-          const updatedBackupDates = new Set(state.backupDates);
-          updatedBackupDates.add(date);
-
+          const updatedBackupDates = new Set([...state.backupDates, date]);
           localStorage.setItem("backupDates", JSON.stringify([...updatedBackupDates]));
           return { backupDates: updatedBackupDates, backupStatus: `Backup successful for ${date}` };
         });
@@ -65,6 +69,11 @@ const useStore = create((set) => ({
     } finally {
       set({ isBackupInProgress: false });
     }
+  },
+
+  initializeStore: () => {
+    const storedDates = JSON.parse(localStorage.getItem("backupDates")) || [];
+    set({ backupDates: new Set(storedDates) });
   },
 }));
 

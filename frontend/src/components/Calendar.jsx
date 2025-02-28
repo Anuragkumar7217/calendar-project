@@ -18,23 +18,37 @@ import useStore from "../store/useStore";
 const Calendar = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const { selectedDate, setSelectedDate, backupDates, addBackupDate, fetchBackupDates } = useStore();
+  const [localBackupDates, setLocalBackupDates] = useState(new Set());
 
   useEffect(() => {
-    fetchBackupDates(); // Load backup data on mount
-  }, []);
+    const loadBackupDates = async () => {
+      const storedDates = JSON.parse(localStorage.getItem("backupDates")) || [];
+      setLocalBackupDates(new Set(storedDates));
+      await fetchBackupDates();
+    };
+    loadBackupDates();
+  }, [fetchBackupDates]);
 
   const handleDateClick = (date) => setSelectedDate(date);
   const closeModal = () => setSelectedDate(null);
 
   const handleBackup = async (date) => {
-    const formattedDate = format(date, "yyyy-MM-dd");
-    await addBackupDate(formattedDate);
+    try {
+      const formattedDate = format(date, "yyyy-MM-dd");
+      const updatedBackupDates = new Set(localBackupDates);
+      updatedBackupDates.add(formattedDate);
+      setLocalBackupDates(updatedBackupDates);
+      localStorage.setItem("backupDates", JSON.stringify([...updatedBackupDates]));
+      await addBackupDate(formattedDate);
+    } catch (error) {
+      console.error("Error adding backup date:", error);
+    }
   };
 
-  const prevMonth = () => setCurrentDate(subMonths(currentDate, 1));
-  const nextMonth = () => setCurrentDate(addMonths(currentDate, 1));
-  const prevYear = () => setCurrentDate(subYears(currentDate, 1));
-  const nextYear = () => setCurrentDate(addYears(currentDate, 1));
+  const prevMonth = () => setCurrentDate((prev) => subMonths(prev, 1));
+  const nextMonth = () => setCurrentDate((prev) => addMonths(prev, 1));
+  const prevYear = () => setCurrentDate((prev) => subYears(prev, 1));
+  const nextYear = () => setCurrentDate((prev) => addYears(prev, 1));
 
   const days = eachDayOfInterval({
     start: startOfWeek(startOfMonth(currentDate)),
@@ -62,15 +76,15 @@ const Calendar = () => {
           const formattedDate = format(day, "yyyy-MM-dd");
           const isToday = formattedDate === format(new Date(), "yyyy-MM-dd");
           const isFutureDate = isFuture(day);
-          const hasBackup = backupDates.has(formattedDate);
+          const hasBackup = localBackupDates.has(formattedDate) || backupDates.has(formattedDate);
 
           return (
             <button
-              key={day}
+              key={formattedDate}
               onClick={() => handleDateClick(day)}
               className={`py-2 w-10 h-10 rounded-full cursor-pointer transition duration-300 ${
-                isToday ? "bg-amber-400 text-white"
-                : hasBackup ? "bg-green-500 text-white"
+                hasBackup ? "bg-green-500 text-white"
+                : isToday ? "bg-amber-400 text-white"
                 : isFutureDate ? "text-gray-400"
                 : "text-black"
               }`}
