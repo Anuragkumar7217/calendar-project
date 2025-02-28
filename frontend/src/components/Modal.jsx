@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { format } from "date-fns";
+import React, { useEffect, useState } from "react";
+import { format, isToday } from "date-fns";
 import useStore from "../store/useStore";
 
 const Modal = ({ selectedDate, closeModal, handleBackup }) => {
@@ -7,64 +7,63 @@ const Modal = ({ selectedDate, closeModal, handleBackup }) => {
 
   const { restoreBackup } = useStore();
   const formattedDate = format(selectedDate, "yyyy-MM-dd");
-  const isFutureDate = selectedDate > new Date();
 
-  // State for tracking backup status
-  const [backupInProgress, setBackupInProgress] = useState(false);
-  const [restoreInProgress, setRestoreInProgress] = useState(false);
-  const [progress, setProgress] = useState(0);
   const [backupCompleted, setBackupCompleted] = useState(false);
+  const [isBackingUp, setIsBackingUp] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(false);
+  const [progress, setProgress] = useState(0);
 
-  // Load backup status from localStorage when component mounts
   useEffect(() => {
     const savedBackups = JSON.parse(localStorage.getItem("backupDates")) || [];
     setBackupCompleted(savedBackups.includes(formattedDate));
   }, [formattedDate]);
 
-  // Function to simulate progress
-  const simulateProgress = (callback) => {
-    setProgress(0);
-    let interval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          callback();
-          return 100;
-        }
-        return prev + 20;
-      });
+  const startBackup = async () => {
+    setIsBackingUp(true);
+    setProgress(10); // Start progress
+
+    const interval = setInterval(() => {
+      setProgress((prev) => (prev < 90 ? prev + 10 : prev));
+    }, 500);
+
+    await handleBackup(selectedDate);
+
+    setProgress(100);
+    clearInterval(interval);
+
+    setTimeout(() => {
+      setIsBackingUp(false);
+      setBackupCompleted(true);
     }, 500);
   };
 
-  // Start backup process
-  const startBackup = async () => {
-    setBackupInProgress(true);
-    simulateProgress(async () => {
-      await handleBackup(selectedDate);
-      setBackupInProgress(false);
-      setBackupCompleted(true);
-
-      // Store in localStorage
-      const savedBackups = JSON.parse(localStorage.getItem("backupDates")) || [];
-      if (!savedBackups.includes(formattedDate)) {
-        localStorage.setItem("backupDates", JSON.stringify([...savedBackups, formattedDate]));
-      }
-    });
-  };
-
-  // Start restore process
   const startRestore = async () => {
-    setRestoreInProgress(true);
-    simulateProgress(async () => {
-      await restoreBackup(formattedDate);
-      setRestoreInProgress(false);
-    });
+    setIsRestoring(true);
+    setProgress(10); // Start progress
+
+    const interval = setInterval(() => {
+      setProgress((prev) => (prev < 90 ? prev + 10 : prev));
+    }, 500);
+
+    await restoreBackup(formattedDate);
+
+    setProgress(100);
+    clearInterval(interval);
+
+    setTimeout(() => {
+      setIsRestoring(false);
+    }, 500);
   };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black/70">
-      <div className="bg-white p-6 rounded-lg shadow-lg text-center w-80">
-        {/* Date Header */}
+    <div
+      className="fixed inset-0 flex items-center justify-center bg-black/70"
+      onClick={closeModal} // Close modal on outside click
+    >
+      <div
+        className="bg-white p-6 rounded-lg shadow-lg text-center w-80"
+        onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside
+      >
         <h2
           className={`text-lg font-semibold mb-4 ${
             backupCompleted ? "text-green-600" : "text-black"
@@ -73,63 +72,68 @@ const Modal = ({ selectedDate, closeModal, handleBackup }) => {
           Options for {format(selectedDate, "PPP")}
         </h2>
 
-        {!isFutureDate && (
-          <>
-            {/* Backup Button & Progress Bar */}
-            {!backupCompleted && (
-              <div>
-                <button
-                  className={`px-4 py-2 bg-blue-500 text-white rounded cursor-pointer hover:bg-blue-700 ${
-                    backupInProgress ? "opacity-50 cursor-not-allowed" : ""
-                  }`}
-                  onClick={startBackup}
-                  disabled={backupInProgress}
-                >
-                  {backupInProgress ? "Backing Up..." : "Backup Now"}
-                </button>
-
-                {backupInProgress && (
-                  <div className="w-full bg-gray-300 mt-2 h-2 rounded">
-                    <div
-                      className="bg-blue-500 h-2 rounded transition-all"
-                      style={{ width: `${progress}%` }}
-                    ></div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Restore Button & Progress Bar */}
-            {backupCompleted && (
-              <div className="mt-4">
-                <button
-                  className={`px-4 py-2 bg-green-500 text-white rounded cursor-pointer hover:bg-green-700 ${
-                    restoreInProgress ? "opacity-50 cursor-not-allowed" : ""
-                  }`}
-                  onClick={startRestore}
-                  disabled={restoreInProgress}
-                >
-                  {restoreInProgress ? "Restoring..." : "Restore Data"}
-                </button>
-
-                {restoreInProgress && (
-                  <div className="w-full bg-gray-300 mt-2 h-2 rounded">
-                    <div
-                      className="bg-green-500 h-2 rounded transition-all"
-                      style={{ width: `${progress}%` }}
-                    ></div>
-                  </div>
-                )}
-              </div>
-            )}
-          </>
+        {!isToday(selectedDate) && (
+          <p className="text-red-500 text-sm mb-2">
+            You can only backup today's date!
+          </p>
         )}
 
-        {/* Close Button */}
+        {/* Backup button */}
+        {!backupCompleted && isToday(selectedDate) && !isBackingUp && (
+          <button
+            className={`px-4 py-2 rounded ${
+              isBackingUp || isRestoring
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-blue-500 hover:bg-blue-700 text-white"
+            }`}
+            onClick={startBackup}
+            disabled={isBackingUp || isRestoring}
+          >
+            Backup Now
+          </button>
+        )}
+
+        {/* Backup Progress Bar */}
+        {isBackingUp && (
+          <div className="mt-4 w-full bg-gray-200 rounded-full h-2">
+            <div
+              className="bg-blue-500 h-2 rounded-full transition-all"
+              style={{ width: `${progress}%` }}
+            ></div>
+          </div>
+        )}
+
+        {/* Restore button */}
+        {backupCompleted && !isRestoring && (
+          <button
+            className={`mt-3 px-4 py-2 rounded ${
+              isBackingUp || isRestoring
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-green-500 hover:bg-green-700 text-white"
+            }`}
+            onClick={startRestore}
+            disabled={isBackingUp || isRestoring}
+          >
+            Restore Data
+          </button>
+        )}
+
+        {/* Restore Progress Bar */}
+        {isRestoring && (
+          <div className="mt-4 w-full bg-gray-200 rounded-full h-2">
+            <div
+              className="bg-green-500 h-2 rounded-full transition-all"
+              style={{ width: `${progress}%` }}
+            ></div>
+          </div>
+        )}
+
+        {/* Close button */}
         <div className="mt-4">
           <button
             className="px-4 py-2 bg-red-500 text-white rounded cursor-pointer hover:bg-red-700"
             onClick={closeModal}
+            disabled={isBackingUp || isRestoring}
           >
             Close
           </button>
