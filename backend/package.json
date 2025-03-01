@@ -11,6 +11,8 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "adm-zip": "^0.5.16",
+    "archiver": "^7.0.1",
     "child_process": "^1.0.2",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
