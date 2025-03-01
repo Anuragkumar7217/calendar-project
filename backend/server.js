@@ -93,30 +93,30 @@ app.post("/api/backup", (req, res) => {
 // Restore a backup
 app.post("/api/restore/:filename", (req, res) => {
     try {
-        const { filename } = req.params;
-        const zipPath = path.join(BACKUP_DIR, filename);
-        const restorePath = zipPath.replace(".zip", "");
-
-        if (!fs.existsSync(zipPath)) {
-            return res.status(404).json({ error: "Backup file not found" });
-        }
-
-        // Extract ZIP using adm-zip (cross-platform)
-        const zip = new AdmZip(zipPath);
-        zip.extractAllTo(restorePath, true);
-
-        //  Restore MongoDB
-        execSync(`"${MONGO_RESTORE_PATH}" --uri="${MONGO_URI}" "${restorePath}"`, { stdio: "inherit" });
-
-        //  Clean up extracted folder
-        fs.rmSync(restorePath, { recursive: true, force: true });
-
-        res.json({ message: `Database restored from ${filename}` });
+      const { filename } = req.params;
+      const zipPath = path.join(BACKUP_DIR, filename);
+      const restorePath = zipPath.replace(".zip", "");
+  
+      if (!fs.existsSync(zipPath)) {
+        return res.status(404).json({ error: `Backup file ${filename} not found.` });
+      }
+  
+      console.log(`Extracting ${filename}...`);
+      const zip = new AdmZip(zipPath);
+      zip.extractAllTo(restorePath, true);
+  
+      console.log("Running mongorestore...");
+      execSync(`"${MONGO_RESTORE_PATH}" --uri="${MONGO_URI}" "${restorePath}"`, { stdio: "inherit" });
+  
+   
+  
+      res.json({ message: `Database successfully restored from ${filename}` });
     } catch (error) {
-        console.error("❌ Restore error:", error);
-        res.status(500).json({ error: "Error restoring backup" });
+      console.error("❌ Restore error:", error);
+      res.status(500).json({ error: `Error restoring backup: ${error.message}` });
     }
-});
+  });
+  
 
 // Download a backup ZIP file
 app.get("/api/download/:filename", (req, res) => {

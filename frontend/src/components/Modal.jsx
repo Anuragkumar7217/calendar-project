@@ -39,22 +39,35 @@ const Modal = ({ selectedDate, closeModal, handleBackup }) => {
 
   const startRestore = async () => {
     setIsRestoring(true);
-    setProgress(10); // Start progress
-
+    setProgress(10);
+  
     const interval = setInterval(() => {
       setProgress((prev) => (prev < 90 ? prev + 10 : prev));
     }, 500);
-
-    await restoreBackup(formattedDate);
-
-    setProgress(100);
+  
+    const backupFilename = `backup-${formattedDate}.zip`; // Correct file format
+    try {
+      const response = await fetch(`http://localhost:5000/api/restore/${backupFilename}`, {
+        method: "POST",
+      });
+  
+      const data = await response.json();
+      if (response.ok) {
+        console.log("Restore successful:", data.message);
+      } else {
+        console.error("Restore failed:", data.error);
+      }
+    } catch (error) {
+      console.error("Restore error:", error);
+    }
+  
     clearInterval(interval);
-
+    setProgress(100);
     setTimeout(() => {
       setIsRestoring(false);
     }, 500);
   };
-
+  
   return (
     <div
       className="fixed inset-0 flex items-center justify-center bg-black/70"
