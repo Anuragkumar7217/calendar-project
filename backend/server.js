@@ -104,6 +104,7 @@ app.post("/api/restore/:filename", (req, res) => {
       console.log(`Extracting ${filename}...`);
       const zip = new AdmZip(zipPath);
       zip.extractAllTo(restorePath, true);
+      
   
       console.log("Running mongorestore...");
       execSync(`"${MONGO_RESTORE_PATH}" --uri="${MONGO_URI}" "${restorePath}"`, { stdio: "inherit" });
