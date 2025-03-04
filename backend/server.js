@@ -56,7 +56,41 @@ app.get("/api/backups", (req, res) => {
     }
 });
 
-// Take a backup (ZIP format)
+// Take a backup (ZIP format) with specific date
+app.post("/api/backup/:date", (req, res) => {
+    try {
+        const date = req.params.date;
+        const backupFolder = `backup-${date}`;
+        const backupPath = path.join(BACKUP_DIR, backupFolder);
+        const zipPath = path.join(BACKUP_DIR, `${backupFolder}.zip`);
+
+        // Prevent duplicate backups
+        if (fs.existsSync(zipPath)) {
+            return res.status(200).json({ message: `Backup for ${date} already exists.` });
+        }
+
+        //  Run MongoDB dump
+        execSync(`"${MONGO_DUMP_PATH}" --uri="${MONGO_URI}" --out "${backupPath}"`, { stdio: "inherit" });
+
+        //  Zip the backup folder
+        const output = fs.createWriteStream(zipPath);
+        const archive = archiver("zip", { zlib: { level: 9 } });
+
+        output.on("close", () => {
+            fs.rmSync(backupPath, { recursive: true, force: true }); // Delete unzipped folder
+            res.status(201).json({ message: `Backup taken successfully for ${date}` });
+        });
+
+        archive.pipe(output);
+        archive.directory(backupPath, false);
+        archive.finalize();
+    } catch (error) {
+        console.error("❌ Backup error:", error);
+        res.status(500).json({ error: "Error taking backup" });
+    }
+});
+
+// Take a backup (ZIP format) without specifying date
 app.post("/api/backup", (req, res) => {
     try {
         const date = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
@@ -78,7 +112,7 @@ app.post("/api/backup", (req, res) => {
 
         output.on("close", () => {
             fs.rmSync(backupPath, { recursive: true, force: true }); // Delete unzipped folder
-            res.status(201).json({ message: `Backup taken successfully`, downloadLink: `/api/download/${backupFolder}.zip` });
+            res.status(201).json({ message: `Backup taken successfully` });
         });
 
         archive.pipe(output);
@@ -117,9 +151,8 @@ app.post("/api/restore/:filename", (req, res) => {
       res.status(500).json({ error: `Error restoring backup: ${error.message}` });
     }
   });
-  
 
-// Download a backup ZIP file
+// Serve backup files directly
 app.get("/api/download/:filename", (req, res) => {
     const { filename } = req.params;
     const filePath = path.join(BACKUP_DIR, filename);
@@ -128,15 +161,12 @@ app.get("/api/download/:filename", (req, res) => {
         return res.status(404).json({ error: "File not found" });
     }
 
-    res.download(filePath, filename, (err) => {
-        if (err) {
-            console.error("❌ Download error:", err);
-            res.status(500).json({ error: "Error downloading file" });
-        }
-    });
+    res.set("Content-Disposition", `attachment; filename="${filename}"`);
+    res.set("Content-Type", "application/zip");
+    fs.createReadStream(filePath).pipe(res);
 });
 
 // Start the server
 app.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`);
-});
+})

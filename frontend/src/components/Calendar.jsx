@@ -1,3 +1,4 @@
+// Calendar.jsx
 import {
   format,
   addMonths,
@@ -17,7 +18,7 @@ import useStore from "../store/useStore";
 
 const Calendar = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const { selectedDate, setSelectedDate, backupDates, addBackupDate, fetchBackupDates } = useStore();
+  const { selectedDate, setSelectedDate, backupDates, fetchBackupDates } = useStore();
   const [localBackupDates, setLocalBackupDates] = useState(new Set());
 
   useEffect(() => {
@@ -76,7 +77,7 @@ const Calendar = () => {
           const formattedDate = format(day, "yyyy-MM-dd");
           const isToday = formattedDate === format(new Date(), "yyyy-MM-dd");
           const isFutureDate = isFuture(day);
-          const hasBackup = localBackupDates.has(formattedDate) || backupDates.has(formattedDate);
+          const hasBackup = backupDates.has(formattedDate);
 
           return (
             <button

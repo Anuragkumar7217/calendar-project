@@ -1,6 +1,8 @@
+// Modal.jsx
 import React, { useEffect, useState } from "react";
 import { format, isToday } from "date-fns";
 import useStore from "../store/useStore";
+import axios from "axios";
 
 const Modal = ({ selectedDate, closeModal, handleBackup }) => {
   if (!selectedDate) return null;
@@ -12,10 +14,12 @@ const Modal = ({ selectedDate, closeModal, handleBackup }) => {
   const [isBackingUp, setIsBackingUp] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [hasBackup, setHasBackup] = useState(false);
 
   useEffect(() => {
     const savedBackups = JSON.parse(localStorage.getItem("backupDates")) || [];
     setBackupCompleted(savedBackups.includes(formattedDate));
+    setHasBackup(savedBackups.includes(formattedDate));
   }, [formattedDate]);
 
   const startBackup = async () => {
@@ -34,6 +38,7 @@ const Modal = ({ selectedDate, closeModal, handleBackup }) => {
     setTimeout(() => {
       setIsBackingUp(false);
       setBackupCompleted(true);
+      setHasBackup(true);
     }, 500);
   };
 
@@ -67,7 +72,23 @@ const Modal = ({ selectedDate, closeModal, handleBackup }) => {
       setIsRestoring(false);
     }, 500);
   };
-  
+
+  const downloadBackup = async () => {
+    const backupFilename = `backup-${formattedDate}.zip`;
+    try {
+      const response = await axios.get(`http://localhost:5000/api/download/${backupFilename}`, { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', backupFilename);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error) {
+      console.error("Download error:", error);
+    }
+  };
+
   return (
     <div
       className="fixed inset-0 flex items-center justify-center bg-black/70"
@@ -139,6 +160,16 @@ const Modal = ({ selectedDate, closeModal, handleBackup }) => {
               style={{ width: `${progress}%` }}
             ></div>
           </div>
+        )}
+
+        {/* Download button */}
+        {hasBackup && (
+          <button
+            className="mt-3 px-4 py-2 bg-orange-500 hover:bg-orange-700 text-white rounded"
+            onClick={downloadBackup}
+          >
+            Download Backup
+          </button>
         )}
 
         {/* Close button */}
