@@ -18,7 +18,7 @@ import useStore from "../store/useStore";
 
 const Calendar = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const { selectedDate, setSelectedDate, backupDates, fetchBackupDates } = useStore();
+  const { selectedDate, setSelectedDate, backupDates, fetchBackupDates, addManualBackupDates } = useStore();
   const [localBackupDates, setLocalBackupDates] = useState(new Set());
 
   useEffect(() => {
@@ -45,6 +45,16 @@ const Calendar = () => {
       console.error("Error adding backup date:", error);
     }
   };
+
+  // Example of adding manual backup dates
+  const manualBackupDates = [
+    { date: "2025-02-15", file: "backup-2025-02-15.zip" },
+    // Add more manual backup dates here
+  ];
+
+  useEffect(() => {
+    addManualBackupDates(manualBackupDates);
+  }, []);
 
   const prevMonth = () => setCurrentDate((prev) => subMonths(prev, 1));
   const nextMonth = () => setCurrentDate((prev) => addMonths(prev, 1));

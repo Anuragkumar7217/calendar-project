@@ -1,4 +1,3 @@
-// useStore.js
 import { create } from "zustand";
 
 const API_BASE_URL =
@@ -71,16 +70,22 @@ const useStore = create((set) => ({
     }
   },
 
-addBackupDate: async (date) => {
-  try {
-    const response = await fetch(`/api/backup/${date}`, { method: "POST" });
-    const data = await response.json();
-    console.log("Backup response:", data);
-  } catch (error) {
-    console.error("Error making backup request:", error);
-  }
-},
+  addManualBackupDates: (manualBackupDates) => {
+    // Access the current state of backupDates
+    set((state) => {
+      const updatedBackupDates = new Set([...state.backupDates]);
+      manualBackupDates.forEach((backup) => {
+        updatedBackupDates.add(backup.date);
+      });
 
+      // Update localStorage and the store
+      localStorage.setItem(
+        "backupDates",
+        JSON.stringify([...updatedBackupDates])
+      );
+      return { backupDates: updatedBackupDates };
+    });
+  },
 
   restoreBackup: async (date) => {
     set({ isBackupInProgress: true });
