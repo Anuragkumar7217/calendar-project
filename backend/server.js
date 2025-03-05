@@ -56,9 +56,8 @@ app.get("/api/listbackups", (req, res) => {
                 if (!match) return null;
                 return {
                     date: match[1],
-                    file: isFolder ? item : `${item}.zip`, // Show as folder or zip
-                    status: isFolder ? "success" : "pending", // UI can show green if "success"
-                    url: isFolder ? null : `${BASE_URL}/api/download/${item}.zip`
+                    file: isFolder ? item : `${item}`, 
+                    url: isFolder ? null : `${BASE_URL}${item}`
                 };
             })
             .filter(item => item !== null) // Remove invalid files
