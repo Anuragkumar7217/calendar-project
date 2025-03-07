@@ -1,4 +1,3 @@
-// Modal.jsx
 import React, { useEffect, useState } from "react";
 import { format, isToday } from "date-fns";
 import useStore from "../store/useStore";
@@ -18,69 +17,71 @@ const Modal = ({ selectedDate, closeModal, handleBackup }) => {
 
   useEffect(() => {
     const savedBackups = JSON.parse(localStorage.getItem("backupDates")) || [];
-    setBackupCompleted(savedBackups.includes(formattedDate));
-    setHasBackup(savedBackups.includes(formattedDate));
+    const hasExistingBackup = savedBackups.includes(formattedDate);
+    setBackupCompleted(hasExistingBackup);
+    setHasBackup(hasExistingBackup);
   }, [formattedDate]);
+
+  const updateProgress = (setProgress, setState) => {
+    let currentProgress = 10;
+    const interval = setInterval(() => {
+      currentProgress += 10;
+      setProgress(currentProgress);
+      if (currentProgress >= 90) clearInterval(interval);
+    }, 500);
+    return interval;
+  };
 
   const startBackup = async () => {
     setIsBackingUp(true);
-    setProgress(10); // Start progress
+    setProgress(10);
+    const interval = updateProgress(setProgress, setIsBackingUp);
 
-    const interval = setInterval(() => {
-      setProgress((prev) => (prev < 90 ? prev + 10 : prev));
-    }, 500);
-
-    await handleBackup(selectedDate);
-
-    setProgress(100);
-    clearInterval(interval);
-
-    setTimeout(() => {
-      setIsBackingUp(false);
+    try {
+      await handleBackup(selectedDate);
+      setProgress(100);
+      clearInterval(interval);
       setBackupCompleted(true);
       setHasBackup(true);
-    }, 500);
+    } catch (error) {
+      console.error("Backup failed:", error);
+    } finally {
+      setTimeout(() => setIsBackingUp(false), 500);
+    }
   };
 
   const startRestore = async () => {
     setIsRestoring(true);
     setProgress(10);
-  
-    const interval = setInterval(() => {
-      setProgress((prev) => (prev < 90 ? prev + 10 : prev));
-    }, 500);
-  
-    const backupFilename = `backup-${formattedDate}.zip`; // Correct file format
+    const interval = updateProgress(setProgress, setIsRestoring);
+
     try {
+      const backupFilename = `backup-${formattedDate}.zip`;
       const response = await fetch(`http://localhost:5000/api/restore/${backupFilename}`, {
         method: "POST",
       });
-  
+
       const data = await response.json();
-      if (response.ok) {
-        console.log("Restore successful:", data.message);
-      } else {
-        console.error("Restore failed:", data.error);
-      }
+      if (!response.ok) throw new Error(data.error || "Restore failed");
+
+      console.log("Restore successful:", data.message);
     } catch (error) {
       console.error("Restore error:", error);
+    } finally {
+      setProgress(100);
+      clearInterval(interval);
+      setTimeout(() => setIsRestoring(false), 500);
     }
-  
-    clearInterval(interval);
-    setProgress(100);
-    setTimeout(() => {
-      setIsRestoring(false);
-    }, 500);
   };
 
   const downloadBackup = async () => {
-    const backupFilename = `backup-${formattedDate}.zip`;
     try {
-      const response = await axios.get(`http://localhost:5000/api/download/${backupFilename}`, { responseType: 'blob' });
+      const backupFilename = `backup-${formattedDate}.zip`;
+      const response = await axios.get(`http://localhost:5000/api/download/${backupFilename}`, { responseType: "blob" });
       const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = url;
-      link.setAttribute('download', backupFilename);
+      link.setAttribute("download", backupFilename);
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -90,35 +91,19 @@ const Modal = ({ selectedDate, closeModal, handleBackup }) => {
   };
 
   return (
-    <div
-      className="fixed inset-0 flex items-center justify-center bg-black/70"
-      onClick={closeModal} // Close modal on outside click
-    >
-      <div
-        className="bg-white p-6 rounded-lg shadow-lg text-center w-80"
-        onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside
-      >
-        <h2
-          className={`text-lg font-semibold mb-4 ${
-            backupCompleted ? "text-green-600" : "text-black"
-          }`}
-        >
+    <div className="fixed inset-0 flex items-center justify-center bg-black/70" onClick={closeModal}>
+      <div className="bg-white p-6 rounded-lg shadow-lg text-center w-80" onClick={(e) => e.stopPropagation()}>
+        <h2 className={`text-lg font-semibold mb-4 ${backupCompleted ? "text-green-600" : "text-black"}`}>
           Options for {format(selectedDate, "PPP")}
         </h2>
 
-        {!isToday(selectedDate) && (
-          <p className="text-red-500 text-sm mb-2">
-            You can only backup today's date!
-          </p>
-        )}
+        {!isToday(selectedDate) && <p className="text-red-500 text-sm mb-2">You can only backup today's date!</p>}
 
-        {/* Backup button */}
+        {/* Backup Button */}
         {!backupCompleted && isToday(selectedDate) && !isBackingUp && (
           <button
             className={`px-4 py-2 rounded ${
-              isBackingUp || isRestoring
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-blue-500 hover:bg-blue-700 text-white"
+              isBackingUp || isRestoring ? "bg-gray-400 cursor-not-allowed" : "bg-blue-500 hover:bg-blue-700 text-white"
             }`}
             onClick={startBackup}
             disabled={isBackingUp || isRestoring}
@@ -130,20 +115,15 @@ const Modal = ({ selectedDate, closeModal, handleBackup }) => {
         {/* Backup Progress Bar */}
         {isBackingUp && (
           <div className="mt-4 w-full bg-gray-200 rounded-full h-2">
-            <div
-              className="bg-blue-500 h-2 rounded-full transition-all"
-              style={{ width: `${progress}%` }}
-            ></div>
+            <div className="bg-blue-500 h-2 rounded-full transition-all" style={{ width: `${progress}%` }}></div>
           </div>
         )}
 
-        {/* Restore button */}
+        {/* Restore Button */}
         {backupCompleted && !isRestoring && (
           <button
             className={`mt-3 px-4 py-2 rounded ${
-              isBackingUp || isRestoring
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-green-500 hover:bg-green-700 text-white"
+              isBackingUp || isRestoring ? "bg-gray-400 cursor-not-allowed" : "bg-green-500 hover:bg-green-700 text-white"
             }`}
             onClick={startRestore}
             disabled={isBackingUp || isRestoring}
@@ -155,24 +135,18 @@ const Modal = ({ selectedDate, closeModal, handleBackup }) => {
         {/* Restore Progress Bar */}
         {isRestoring && (
           <div className="mt-4 w-full bg-gray-200 rounded-full h-2">
-            <div
-              className="bg-green-500 h-2 rounded-full transition-all"
-              style={{ width: `${progress}%` }}
-            ></div>
+            <div className="bg-green-500 h-2 rounded-full transition-all" style={{ width: `${progress}%` }}></div>
           </div>
         )}
 
-        {/* Download button */}
+        {/* Download Button */}
         {hasBackup && (
-          <button
-            className="mt-3 px-4 py-2 bg-orange-500 hover:bg-orange-700 text-white rounded"
-            onClick={downloadBackup}
-          >
+          <button className="mt-3 px-4 py-2 bg-orange-500 hover:bg-orange-700 text-white rounded" onClick={downloadBackup}>
             Download Backup
           </button>
         )}
 
-        {/* Close button */}
+        {/* Close Button */}
         <div className="mt-4">
           <button
             className="px-4 py-2 bg-red-500 text-white rounded cursor-pointer hover:bg-red-700"

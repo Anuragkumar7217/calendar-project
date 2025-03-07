@@ -30,10 +30,10 @@ if (!fs.existsSync(BACKUP_DIR)) {
     fs.mkdirSync(BACKUP_DIR, { recursive: true });
 }
 
-// ✅ List backups (including folders)
-app.get("/api/listbackups", (req, res) => {
+// ✅ List backups (only ZIP files, with date range in request body)
+app.post("/api/listbackups", (req, res) => {
     try {
-        const { startDate, endDate } = req.query;
+        const { startDate, endDate } = req.body;
 
         if (!startDate || !endDate) {
             return res.status(400).json({ error: "Start and End dates are required" });
@@ -46,18 +46,17 @@ app.get("/api/listbackups", (req, res) => {
             return res.status(400).json({ error: "Invalid date format" });
         }
 
-        // Get list of backups (both ZIPs and folders)
+        // Get list of ZIP backups only
         const items = fs.readdirSync(BACKUP_DIR)
+            .filter(item => item.endsWith(".zip")) // ✅ Filter ZIP files only
             .map(item => {
-                const fullPath = path.join(BACKUP_DIR, item);
-                const isFolder = fs.statSync(fullPath).isDirectory();
                 const match = item.match(/backup-(\d{4}-\d{2}-\d{2})/);
-
                 if (!match) return null;
+
                 return {
                     date: match[1],
-                    file: isFolder ? item : `${item}`, 
-                    url: isFolder ? null : `${BASE_URL}${item}`
+                    file: item, 
+                    url: `${BASE_URL}${item}` // ✅ Generate download URL
                 };
             })
             .filter(item => item !== null) // Remove invalid files
@@ -72,7 +71,6 @@ app.get("/api/listbackups", (req, res) => {
         res.status(500).json({ error: "Error fetching backups" });
     }
 });
-
 // ✅ Take a backup (ZIP format)
 app.post("/api/backup", (req, res) => {
     try {

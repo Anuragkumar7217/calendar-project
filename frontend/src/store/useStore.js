@@ -1,39 +1,38 @@
 import { create } from "zustand";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
-// Retrieve backupDates from localStorage (Ensure it is always an array)
+// Retrieve stored backup dates safely
 const storedBackupDates = JSON.parse(localStorage.getItem("backupDates")) || [];
 
 const useStore = create((set) => ({
   selectedDate: null,
-  isBackupInProgress:
-    JSON.parse(localStorage.getItem("isBackupInProgress")) || false,
+  isBackupInProgress: JSON.parse(localStorage.getItem("isBackupInProgress")) || false,
   backupStatus: "",
-  backupDates: new Set(storedBackupDates), // Initialize Set from localStorage
+  backupDates: new Set(storedBackupDates), // Store as a Set to avoid duplicates
 
   setSelectedDate: (date) => set({ selectedDate: date }),
+
   setBackupInProgress: (status) => {
     localStorage.setItem("isBackupInProgress", JSON.stringify(status));
     set({ isBackupInProgress: status });
   },
+
   setBackupStatus: (status) => set({ backupStatus: status }),
 
-  fetchBackupDates: async () => {
+  // Fetch backup dates dynamically
+  fetchBackupDates: async (startDate, endDate) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/backups`);
+      const response = await fetch(`${API_BASE_URL}/listbackups`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ startDate, endDate }),
+      });
+
       const data = await response.json();
       if (data.backups) {
-        const formattedDates = new Set(
-          data.backups.map((file) =>
-            file.replace("backup-", "").replace(".zip", "")
-          )
-        );
-        localStorage.setItem(
-          "backupDates",
-          JSON.stringify([...formattedDates])
-        );
+        const formattedDates = new Set(data.backups.map((file) => file.date));
+        localStorage.setItem("backupDates", JSON.stringify([...formattedDates]));
         set({ backupDates: formattedDates });
       }
     } catch (error) {
@@ -41,21 +40,18 @@ const useStore = create((set) => ({
     }
   },
 
-  addBackupDate: async (date) => {
+  // Add a new backup
+  addBackupDate: async () => {
     set({ isBackupInProgress: true });
     try {
-      const response = await fetch(`${API_BASE_URL}/backup/${date}`, {
-        method: "POST",
-      });
+      const response = await fetch(`${API_BASE_URL}/backup`, { method: "POST" });
       const data = await response.json();
 
       if (data.message) {
+        const date = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
         set((state) => {
           const updatedBackupDates = new Set([...state.backupDates, date]);
-          localStorage.setItem(
-            "backupDates",
-            JSON.stringify([...updatedBackupDates])
-          );
+          localStorage.setItem("backupDates", JSON.stringify([...updatedBackupDates]));
           return {
             backupDates: updatedBackupDates,
             backupStatus: `Backup successful for ${date}`,
@@ -70,33 +66,15 @@ const useStore = create((set) => ({
     }
   },
 
-  addManualBackupDates: (manualBackupDates) => {
-    // Access the current state of backupDates
-    set((state) => {
-      const updatedBackupDates = new Set([...state.backupDates]);
-      manualBackupDates.forEach((backup) => {
-        updatedBackupDates.add(backup.date);
-      });
-
-      // Update localStorage and the store
-      localStorage.setItem(
-        "backupDates",
-        JSON.stringify([...updatedBackupDates])
-      );
-      return { backupDates: updatedBackupDates };
-    });
-  },
-
-  restoreBackup: async (date) => {
+  // Restore a backup
+  restoreBackup: async (filename) => {
     set({ isBackupInProgress: true });
     try {
-      const response = await fetch(`${API_BASE_URL}/restore/${date}`, {
-        method: "POST",
-      });
+      const response = await fetch(`${API_BASE_URL}/restore/${filename}`, { method: "POST" });
       const data = await response.json();
 
       if (data.message) {
-        set({ backupStatus: `Restored backup from ${date}` });
+        set({ backupStatus: `Restored backup from ${filename}` });
       }
     } catch (error) {
       set({ backupStatus: "Restore failed" });
@@ -104,11 +82,6 @@ const useStore = create((set) => ({
     } finally {
       set({ isBackupInProgress: false });
     }
-  },
-
-  initializeStore: () => {
-    const storedDates = JSON.parse(localStorage.getItem("backupDates")) || [];
-    set({ backupDates: new Set(storedDates) });
   },
 }));
 
