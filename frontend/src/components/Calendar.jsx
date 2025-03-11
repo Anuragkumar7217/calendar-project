@@ -19,17 +19,16 @@ import useStore from "../store/useStore";
 
 const Calendar = ({ userRole }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const { selectedDate, setSelectedDate, backupDates, fetchBackupDates } =
-    useStore();
+  const { selectedDate, setSelectedDate, backupDates, fetchBackupDates, addBackupDate } = useStore();
 
   useEffect(() => {
-    // Get start and end dates of the current month
     const startDate = format(startOfMonth(currentDate), "yyyy-MM-dd");
     const endDate = format(endOfMonth(currentDate), "yyyy-MM-dd");
     fetchBackupDates(startDate, endDate);
   }, [currentDate, fetchBackupDates]);
 
   const handleDateClick = (date) => setSelectedDate(date);
+
   const handleBackup = async (date) => {
     try {
       const response = await fetch("http://localhost:5000/api/backup", {
@@ -41,8 +40,8 @@ const Calendar = ({ userRole }) => {
       });
 
       if (!response.ok) throw new Error("Backup failed");
-      const data = await response.json();
-      console.log("Backup successful:", data);
+
+      addBackupDate(format(date, "yyyy-MM-dd")); // Update state immediately
     } catch (error) {
       console.error("Backup error:", error);
     }
@@ -61,40 +60,16 @@ const Calendar = ({ userRole }) => {
   return (
     <div className="max-w-lg mx-auto mt-12 bg-white border shadow-lg rounded-lg p-8">
       <div className="flex justify-between items-center mb-4 bg-gray-200 rounded p-2">
-        <button
-          onClick={prevYear}
-          className="px-3 py-1 bg-gray-400 rounded cursor-pointer"
-        >
-          «
-        </button>
-        <button
-          onClick={prevMonth}
-          className="px-3 py-1 bg-gray-300 rounded-full cursor-pointer hover:bg-gray-400"
-        >
-          ‹
-        </button>
-        <h2 className="text-xl font-bold">
-          {format(currentDate, "MMMM yyyy")}
-        </h2>
-        <button
-          onClick={nextMonth}
-          className="px-3 py-1 bg-gray-300 rounded-full cursor-pointer hover:bg-gray-400"
-        >
-          ›
-        </button>
-        <button
-          onClick={nextYear}
-          className="px-3 py-1 bg-gray-400 rounded cursor-pointer"
-        >
-          »
-        </button>
+        <button onClick={prevYear} className="px-3 py-1 bg-gray-400 rounded cursor-pointer">«</button>
+        <button onClick={prevMonth} className="px-3 py-1 bg-gray-300 rounded-full cursor-pointer hover:bg-gray-400">‹</button>
+        <h2 className="text-xl font-bold">{format(currentDate, "MMMM yyyy")}</h2>
+        <button onClick={nextMonth} className="px-3 py-1 bg-gray-300 rounded-full cursor-pointer hover:bg-gray-400">›</button>
+        <button onClick={nextYear} className="px-3 py-1 bg-gray-400 rounded cursor-pointer">»</button>
       </div>
 
       <div className="grid grid-cols-7 gap-1 text-center font-semibold text-gray-600">
         {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
-          <div key={day} className="py-2">
-            {day}
-          </div>
+          <div key={day} className="py-2">{day}</div>
         ))}
       </div>
 
@@ -110,13 +85,10 @@ const Calendar = ({ userRole }) => {
               key={formattedDate}
               onClick={() => handleDateClick(day)}
               className={`py-2 w-10 h-10 rounded-full cursor-pointer transition duration-300 ${
-                hasBackup
-                  ? "bg-green-500 text-white"
-                  : isToday
-                  ? "bg-amber-400 text-white"
-                  : isFutureDate
-                  ? "text-gray-400"
-                  : "text-black"
+                hasBackup ? "bg-green-500 text-white" : 
+                isToday ? "bg-amber-400 text-white" : 
+                isFutureDate ? "text-gray-400" : 
+                "text-black"
               }`}
             >
               {format(day, "d")}
@@ -126,12 +98,7 @@ const Calendar = ({ userRole }) => {
       </div>
 
       {selectedDate && (
-        <Modal
-          selectedDate={selectedDate}
-          closeModal={() => setSelectedDate(null)}
-          handleBackup={handleBackup} // Pass the function as a prop
-          userRole={userRole} //Pass userRole
-        />
+        <Modal selectedDate={selectedDate} closeModal={() => setSelectedDate(null)} handleBackup={handleBackup} userRole={userRole} />
       )}
     </div>
   );
