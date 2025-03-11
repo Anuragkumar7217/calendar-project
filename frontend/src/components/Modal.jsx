@@ -1,14 +1,14 @@
+// Modal.jsx
 import React, { useEffect, useState } from "react";
 import { format, isToday } from "date-fns";
 import useStore from "../store/useStore";
 import axios from "axios";
 
-const Modal = ({ selectedDate, closeModal, handleBackup }) => {
+const Modal = ({ selectedDate, closeModal, handleBackup, userRole }) => {
   if (!selectedDate) return null;
 
   const { restoreBackup } = useStore();
   const formattedDate = format(selectedDate, "yyyy-MM-dd");
-
   const [backupCompleted, setBackupCompleted] = useState(false);
   const [isBackingUp, setIsBackingUp] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
@@ -108,7 +108,7 @@ const Modal = ({ selectedDate, closeModal, handleBackup }) => {
           Options for {format(selectedDate, "PPP")}
         </h2>
 
-        {!isToday(selectedDate) && <p className="text-red-500 text-sm mb-2">You can only backup today's date!</p>}
+        {!isToday(selectedDate) && <p className="text-red-500 text-sm mb-2">No backups are available for the selected date.</p>}
 
         {/* Backup Button */}
         {!backupCompleted && isToday(selectedDate) && !isBackingUp && (
@@ -129,7 +129,7 @@ const Modal = ({ selectedDate, closeModal, handleBackup }) => {
         )}
 
         {/* Restore Button */}
-        {backupCompleted && !isRestoring && (
+        {backupCompleted && !isRestoring && userRole === "admin" && (
           <button
             className={`mt-3 m-4 px-4 py-2 rounded ${isBackingUp || isRestoring ? "bg-gray-400 cursor-not-allowed" : "bg-green-500 hover:bg-green-700 text-white"}`}
             onClick={startRestore}

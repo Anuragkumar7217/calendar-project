@@ -1,3 +1,4 @@
+// Calendar.jsx
 import {
   format,
   addMonths,
@@ -16,7 +17,7 @@ import React, { useEffect, useState } from "react";
 import Modal from "./Modal";
 import useStore from "../store/useStore";
 
-const Calendar = () => {
+const Calendar = ({ userRole }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const { selectedDate, setSelectedDate, backupDates, fetchBackupDates } =
     useStore();
@@ -26,7 +27,7 @@ const Calendar = () => {
     const startDate = format(startOfMonth(currentDate), "yyyy-MM-dd");
     const endDate = format(endOfMonth(currentDate), "yyyy-MM-dd");
     fetchBackupDates(startDate, endDate);
-  }, [currentDate, fetchBackupDates]); // Fetch when `currentDate` changes
+  }, [currentDate, fetchBackupDates]);
 
   const handleDateClick = (date) => setSelectedDate(date);
   const handleBackup = async (date) => {
@@ -38,7 +39,7 @@ const Calendar = () => {
         },
         body: JSON.stringify({ date }),
       });
-  
+
       if (!response.ok) throw new Error("Backup failed");
       const data = await response.json();
       console.log("Backup successful:", data);
@@ -46,7 +47,7 @@ const Calendar = () => {
       console.error("Backup error:", error);
     }
   };
-  
+
   const prevMonth = () => setCurrentDate((prev) => subMonths(prev, 1));
   const nextMonth = () => setCurrentDate((prev) => addMonths(prev, 1));
   const prevYear = () => setCurrentDate((prev) => subYears(prev, 1));
@@ -58,7 +59,7 @@ const Calendar = () => {
   });
 
   return (
-    <div className="max-w-lg mx-auto mt-5 bg-white border shadow-lg rounded-lg p-8">
+    <div className="max-w-lg mx-auto mt-12 bg-white border shadow-lg rounded-lg p-8">
       <div className="flex justify-between items-center mb-4 bg-gray-200 rounded p-2">
         <button
           onClick={prevYear}
@@ -129,6 +130,7 @@ const Calendar = () => {
           selectedDate={selectedDate}
           closeModal={() => setSelectedDate(null)}
           handleBackup={handleBackup} // Pass the function as a prop
+          userRole={userRole} //Pass userRole
         />
       )}
     </div>
