@@ -110,7 +110,7 @@ app.post("/api/restore/:filename", (req, res) => {
     try {
         const { filename } = req.params;
         const zipPath = path.join(BACKUP_DIR, filename);
-        const restorePath = zipPath.replace(".zip", "");
+        const restorePath = zipPath.replace(".zip", ""); // Extract folder (e.g., backup-2025-03-11)
 
         if (!fs.existsSync(zipPath)) {
             return res.status(404).json({ error: `Backup file ${filename} not found.` });
@@ -120,8 +120,13 @@ app.post("/api/restore/:filename", (req, res) => {
         const zip = new AdmZip(zipPath);
         zip.extractAllTo(restorePath, true);
 
-        console.log("Running mongorestore...");
-        execSync(`"${MONGO_RESTORE_PATH}" --uri="${MONGO_URI}" "${restorePath}"`, { stdio: "inherit" });
+        // **Ensure the extracted folder exists**
+        if (!fs.existsSync(restorePath)) {
+            return res.status(400).json({ error: `Extracted folder ${restorePath} not found.` });
+        }
+
+        console.log("Dropping existing database...");
+        execSync(`"${MONGO_RESTORE_PATH}" --uri="${MONGO_URI}" --drop "${restorePath}"`, { stdio: "inherit" });
 
         res.json({ message: `Database successfully restored from ${filename}` });
     } catch (error) {
@@ -129,6 +134,7 @@ app.post("/api/restore/:filename", (req, res) => {
         res.status(500).json({ error: `Error restoring backup: ${error.message}` });
     }
 });
+
 
 // ✅ Serve backup files directly (Download)
 app.get("/api/download/:filename", (req, res) => {
