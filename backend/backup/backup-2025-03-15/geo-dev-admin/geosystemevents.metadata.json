@@ -1,0 +1,1 @@
+{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"}],"uuid":"0354bd28d1ef45e0bbd79f4f400b9e67","collectionName":"geosystemevents","type":"collection"}

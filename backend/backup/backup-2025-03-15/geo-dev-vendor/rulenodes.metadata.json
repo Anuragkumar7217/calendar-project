@@ -1,0 +1,1 @@
+{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"}],"uuid":"aa52a5860d9f4a9bbe344c4935cb0a77","collectionName":"rulenodes","type":"collection"}

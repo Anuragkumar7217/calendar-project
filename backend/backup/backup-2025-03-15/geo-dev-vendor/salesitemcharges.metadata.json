@@ -1,0 +1,1 @@
+{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"}],"uuid":"6e4be6b86d744827b5c101726561d0e4","collectionName":"salesitemcharges","type":"collection"}

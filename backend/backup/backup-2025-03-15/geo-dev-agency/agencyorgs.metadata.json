@@ -1,0 +1,1 @@
+{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"}],"uuid":"44aec62cc55745fc9590d27e6c8343cf","collectionName":"agencyorgs","type":"collection"}

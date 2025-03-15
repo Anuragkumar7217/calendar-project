@@ -1,0 +1,1 @@
+{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"}],"uuid":"68fd653f5e2e4c5da9fcfc384e2398c4","collectionName":"statecodes","type":"collection"}

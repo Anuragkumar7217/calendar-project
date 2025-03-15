@@ -1,0 +1,1 @@
+{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"}],"uuid":"ff279bb973d341edaac77db974e665e4","collectionName":"billaccounts","type":"collection"}
