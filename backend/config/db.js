@@ -1,8 +1,9 @@
 const mongoose = require("mongoose");
+require("dotenv").config(); // Load environment variables
 
 const connectDB = async () => {
   try {
-    await mongoose.connect("process.env.MONGO_AUTH_URL", {
+    await mongoose.connect(process.env.MONGO_AUTH_URL, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
     });

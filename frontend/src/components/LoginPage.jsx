@@ -1,31 +1,57 @@
-// LoginPage.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import useStore from "../store/useStore"; // Ensure the correct path
 
-const LoginPage = ({ setIsAuthenticated, setUserRole }) => {
+const LoginPage = () => {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
-    const [role, setRole] = useState("user");
+    const [role, setRole] = useState("user"); // Default role selection
+    const [error, setError] = useState("");
     const navigate = useNavigate();
 
-    const handleLogin = () => {
-        if (username && password) {
-            const userData = { username, role };
-            localStorage.setItem("user", JSON.stringify(userData));
+    const { setBackupStatus } = useStore();
+    const API_BASE_URL =
+        import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
-            setIsAuthenticated(true);
-            setUserRole(role);
+    const handleLogin = async () => {
+        if (!username || !password) {
+            setError("Please enter valid credentials");
+            return;
+        }
 
-            navigate(`/${role}`); // Redirect after login
-        } else {
-            alert("Please enter valid credentials");
+        try {
+            const response = await fetch(`${API_BASE_URL}/auth/login`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username, password, role }), // Send selected role
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                localStorage.setItem("user", JSON.stringify({ username, role }));
+                localStorage.setItem("token", data.token); // Store token
+
+                setBackupStatus("Login successful");
+                navigate(`/${role}`); // Redirect to role-based dashboard
+            } else {
+                setError(data.msg || "Login failed");
+            }
+        } catch (error) {
+            console.error("Login Error:", error);
+            setError("Something went wrong. Please try again.");
         }
     };
 
     return (
         <div className="max-w-md mx-auto mt-12 bg-white border shadow-lg rounded-lg p-8">
-            <h2 className="text-2xl font-bold text-gray-800 text-center mb-6">Login</h2>
-
+            {" "}
+            <h2 className="text-2xl font-bold text-gray-800 text-center mb-6">
+                Login
+            </h2>
+            {" "}
+            {error && <p className="text-red-500 text-center mb-4">{error}</p>}
+            {" "}
             <input
                 type="text"
                 placeholder="Username"
@@ -33,7 +59,7 @@ const LoginPage = ({ setIsAuthenticated, setUserRole }) => {
                 onChange={(e) => setUsername(e.target.value)}
                 className="w-full px-4 py-2 mb-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
             />
-
+            {" "}
             <input
                 type="password"
                 placeholder="Password"
@@ -41,22 +67,23 @@ const LoginPage = ({ setIsAuthenticated, setUserRole }) => {
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full px-4 py-2 mb-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
             />
-
+            {" "}
             <select
                 value={role}
                 onChange={(e) => setRole(e.target.value)}
                 className="w-full px-4 py-2 mb-6 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
             >
-                <option value="user">User</option>
-                <option value="admin">Admin</option>
+                <option value="user">User</option>               {" "}
+                <option value="admin">Admin</option>           {" "}
             </select>
-
+            {" "}
             <button
                 onClick={handleLogin}
                 className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition duration-300"
             >
-                Login
+                Login            {" "}
             </button>
+            {" "}
         </div>
     );
 };

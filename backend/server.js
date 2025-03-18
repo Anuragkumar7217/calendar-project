@@ -6,7 +6,9 @@ const path = require("path");
 const { execSync } = require("child_process");
 const archiver = require("archiver");
 const AdmZip = require("adm-zip");
+const connectDB = require("./config/db");
 
+// Load environment variables
 const app = express();
 const PORT = process.env.PORT || 5000;
 const BACKUP_DIR = path.join(__dirname, "backup");
@@ -22,15 +24,28 @@ if (!MONGO_DUMP_PATH || !MONGO_RESTORE_PATH || !MONGO_URI) {
     process.exit(1);
 }
 
-app.use(cors());
-app.use(express.json());
+// Initialize Middleware
+app.use(express.json()); // Body parser
+app.use(cors()); // Enable CORS
 
 // Ensure backup directory exists
 if (!fs.existsSync(BACKUP_DIR)) {
     fs.mkdirSync(BACKUP_DIR, { recursive: true });
 }
 
-// ✅ List backups (only ZIP files, with date range in request body)
+// Connect Database
+connectDB();
+
+// Define Routes
+app.use("/api/auth", require("./routes/auth"));
+app.use("/api/admin", require("./routes/admin"));
+app.use("/api/user", require("./routes/user"));
+
+
+
+
+//✅ List backups (only ZIP files, with date range in request body)
+ 
 app.post("/api/listbackups", (req, res) => {
     try {
         const { startDate, endDate } = req.body;
@@ -55,7 +70,7 @@ app.post("/api/listbackups", (req, res) => {
 
                 return {
                     date: match[1],
-                    file: item, 
+                    file: item,
                     url: `${BASE_URL}${item}` // ✅ Generate download URL
                 };
             })
@@ -71,7 +86,10 @@ app.post("/api/listbackups", (req, res) => {
         res.status(500).json({ error: "Error fetching backups" });
     }
 });
-// ✅ Take a backup (ZIP format)
+
+
+ // ✅ Take a backup (ZIP format)
+
 app.post("/api/backup", (req, res) => {
     try {
         const date = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
@@ -105,12 +123,14 @@ app.post("/api/backup", (req, res) => {
     }
 });
 
-// ✅ Restore a backup
+
+//✅ Restore a backup
+ 
 app.post("/api/restore/:filename", (req, res) => {
     try {
         const { filename } = req.params;
         const zipPath = path.join(BACKUP_DIR, filename);
-        const restorePath = zipPath.replace(".zip", ""); // Extract folder (e.g., backup-2025-03-11)
+        const restorePath = zipPath.replace(".zip", ""); // Extract folder (e.g., backup-YYYY-MM-DD)
 
         if (!fs.existsSync(zipPath)) {
             return res.status(404).json({ error: `Backup file ${filename} not found.` });
@@ -136,7 +156,8 @@ app.post("/api/restore/:filename", (req, res) => {
 });
 
 
-// ✅ Serve backup files directly (Download)
+ // ✅ Serve backup files directly (Download)
+
 app.get("/api/download/:filename", (req, res) => {
     const { filename } = req.params;
     const filePath = path.join(BACKUP_DIR, filename);
