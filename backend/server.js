@@ -24,6 +24,24 @@ if (!MONGO_DUMP_PATH || !MONGO_RESTORE_PATH || !MONGO_URI) {
     process.exit(1);
 }
 
+const corsOptions = {
+    origin: "http://localhost:5173",  
+    methods: "GET,POST,PUT,DELETE,PATCH,OPTIONS",
+    allowedHeaders: "Content-Type,Authorization",
+    credentials: true,
+};
+
+app.use(cors(corsOptions));
+
+// Handle OPTIONS preflight requests manually
+app.options("*", (req, res) => {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
+    res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    res.sendStatus(200);
+});
+
+
 // Initialize Middleware
 app.use(express.json()); // Body parser
 app.use(cors()); // Enable CORS
