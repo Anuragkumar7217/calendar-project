@@ -10,7 +10,10 @@ router.post(
   "/register",
   [
     check("username", "Username is required").not().isEmpty(),
-    check("password", "Please enter a password with 6 or more characters").isLength({ min: 6 }),
+    check(
+      "password",
+      "Please enter a password with 6 or more characters"
+    ).isLength({ min: 6 }),
     check("role", "Role must be either user or admin").isIn(["user", "admin"]),
   ],
   async (req, res) => {
@@ -89,7 +92,10 @@ router.post(
         { expiresIn: "5h" },
         (err, token) => {
           if (err) throw err;
-          res.json({ token, user: { id: user.id, username: user.username, role: user.role } });
+          res.json({
+            token,
+            user: { id: user.id, username: user.username, role: user.role },
+          });
         }
       );
     } catch (err) {
