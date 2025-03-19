@@ -7,6 +7,7 @@ const { execSync } = require("child_process");
 const archiver = require("archiver");
 const AdmZip = require("adm-zip");
 const connectDB = require("./config/db");
+const authMiddleware = require("./middleware/auth");
 
 // Load environment variables
 const app = express();
@@ -33,14 +34,15 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
-// Handle OPTIONS preflight requests manually
-app.options("*", (req, res) => {
-    res.header("Access-Control-Allow-Origin", "*");
-    res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
-    res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
-    res.sendStatus(200);
-});
 
+// ✅ Manually handle OPTIONS preflight requests
+app.options("*", (req, res) => {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+    return res.status(200).end();
+});
 
 // Initialize Middleware
 app.use(express.json()); // Body parser
@@ -56,15 +58,15 @@ connectDB();
 
 // Define Routes
 app.use("/api/auth", require("./routes/auth"));
-app.use("/api/admin", require("./routes/admin"));
-app.use("/api/user", require("./routes/user"));
+// app.use("/api/admin", require("./routes/admin"));
+// app.use("/api/user", require("./routes/user"));
 
 
 
 
 //✅ List backups (only ZIP files, with date range in request body)
  
-app.post("/api/listbackups", (req, res) => {
+app.post("/api/listbackups",authMiddleware, (req, res) => {
     try {
         const { startDate, endDate } = req.body;
 
@@ -108,7 +110,7 @@ app.post("/api/listbackups", (req, res) => {
 
  // ✅ Take a backup (ZIP format)
 
-app.post("/api/backup", (req, res) => {
+app.post("/api/backup",authMiddleware, (req, res) => {
     try {
         const date = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
         const backupFolder = `backup-${date}`;
@@ -144,7 +146,7 @@ app.post("/api/backup", (req, res) => {
 
 //✅ Restore a backup
  
-app.post("/api/restore/:filename", (req, res) => {
+app.post("/api/restore/:filename",authMiddleware, (req, res) => {
     try {
         const { filename } = req.params;
         const zipPath = path.join(BACKUP_DIR, filename);
@@ -176,7 +178,7 @@ app.post("/api/restore/:filename", (req, res) => {
 
  // ✅ Serve backup files directly (Download)
 
-app.get("/api/download/:filename", (req, res) => {
+app.get("/api/download/:filename",authMiddleware, (req, res) => {
     const { filename } = req.params;
     const filePath = path.join(BACKUP_DIR, filename);
 
