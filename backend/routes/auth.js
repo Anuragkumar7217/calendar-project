@@ -1,5 +1,6 @@
 const express = require("express");
 const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
 const User = require("../models/User");
 const auth = require("../middleware/auth");
 const { check, validationResult } = require("express-validator");
@@ -22,47 +23,52 @@ router.post(
 
     try {
       let user = await User.findOne({ username });
+
       if (!user) {
-        // Create JWT payload
+        // Hash password before storing
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+
         const currentDate = new Date();
-        const payload = { username, password, createdAt: currentDate };
+        const payload = { username, createdAt: currentDate };
 
         const token = jwt.sign(payload, process.env.JWT_SECRET, {
           expiresIn: "5h",
         });
+
         const userResponse = {
-          password: password,
-          username: username,
-          role: role,
-          token: token,
+          password: hashedPassword,
+          username,
+          role,
+          token,
           createdAt: currentDate,
         };
-        user = await User.insertOne(userResponse, {
-          upsert: true,
-          new: true,
-        });
+
+        user = await User.create(userResponse);
       } else {
-        const isMatch = jwt.verify(password, process.env.JWT_SECRET);
+        // Compare hashed password
+        const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
           return res.status(400).json({ msg: "Invalid credentials" });
         }
+
         const currentDate = new Date();
-        const payload = { username, password, createdAt: currentDate };
+        const payload = { username, createdAt: currentDate };
 
         const token = jwt.sign(payload, process.env.JWT_SECRET, {
           expiresIn: "5h",
         });
+
         const userResponse = {
-          password: password,
-          username: username,
-          role: role,
-          token: token,
+          token,
           createdAt: currentDate,
         };
-        user = await User.updateOne(userResponse, {
-          upsert: true,
-          new: true,
-        });
+
+        user = await User.findOneAndUpdate(
+          { username },
+          { $set: userResponse },
+          { upsert: true, new: true }
+        );
       }
       res.json(user);
     } catch (err) {
@@ -71,6 +77,9 @@ router.post(
     }
   }
 );
+
+module.exports = router;
+
 // router.post(
 //   "/register",
 //   [
