@@ -1,4 +1,3 @@
-// Calendar.jsx
 import {
   format,
   addMonths,
@@ -13,7 +12,7 @@ import {
   isFuture,
 } from "date-fns";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import Modal from "./Modal";
 import useStore from "../store/useStore";
 
@@ -21,27 +20,39 @@ const Calendar = ({ userRole }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const { selectedDate, setSelectedDate, backupDates, fetchBackupDates, addBackupDate } = useStore();
 
-  useEffect(() => {
+  // Wrap fetchBackupDates to prevent unnecessary re-renders
+  const fetchDates = useCallback(() => {
     const startDate = format(startOfMonth(currentDate), "yyyy-MM-dd");
     const endDate = format(endOfMonth(currentDate), "yyyy-MM-dd");
     fetchBackupDates(startDate, endDate);
   }, [currentDate, fetchBackupDates]);
 
+  useEffect(() => {
+    fetchDates();
+  }, [fetchDates]);
+
   const handleDateClick = (date) => setSelectedDate(date);
 
   const handleBackup = async (date) => {
     try {
+      const token = localStorage.getItem("authtoken"); // Get authentication token
+      if (!token) throw new Error("Unauthorized - No token provided");
+
       const response = await fetch("http://localhost:5000/api/backup", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`, // Include token
         },
         body: JSON.stringify({ date }),
       });
 
-      if (!response.ok) throw new Error("Backup failed");
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`Backup failed: ${errorData.message || response.statusText}`);
+      }
 
-      addBackupDate(format(date, "yyyy-MM-dd")); // Update state immediately
+      addBackupDate(format(date, "yyyy-MM-dd")); // Update UI immediately
     } catch (error) {
       console.error("Backup error:", error);
     }
@@ -87,9 +98,10 @@ const Calendar = ({ userRole }) => {
               className={`py-2 w-10 h-10 rounded-full cursor-pointer transition duration-300 ${
                 hasBackup ? "bg-green-500 text-white" : 
                 isToday ? "bg-amber-400 text-white" : 
-                isFutureDate ? "text-gray-400" : 
-                "text-black"
+                isFutureDate ? "text-gray-400 cursor-not-allowed" : 
+                "text-black hover:bg-gray-200"
               }`}
+              disabled={isFutureDate} // Disable future dates
             >
               {format(day, "d")}
             </button>
@@ -98,7 +110,12 @@ const Calendar = ({ userRole }) => {
       </div>
 
       {selectedDate && (
-        <Modal selectedDate={selectedDate} closeModal={() => setSelectedDate(null)} handleBackup={handleBackup} userRole={userRole} />
+        <Modal 
+          selectedDate={selectedDate} 
+          closeModal={() => setSelectedDate(null)} 
+          handleBackup={handleBackup} 
+          userRole={userRole} 
+        />
       )}
     </div>
   );

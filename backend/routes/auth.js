@@ -37,7 +37,7 @@ router.post(
         });
 
         const userResponse = {
-          password: hashedPassword,
+          password: password,
           username,
           role,
           token,
@@ -46,12 +46,7 @@ router.post(
 
         user = await User.create(userResponse);
       } else {
-        // Compare hashed password
-        const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) {
-          return res.status(400).json({ msg: "Invalid credentials" });
-        }
-
+        
         const currentDate = new Date();
         const payload = { username, createdAt: currentDate };
 
@@ -60,6 +55,9 @@ router.post(
         });
 
         const userResponse = {
+          password: password,
+          username,
+          role,
           token,
           createdAt: currentDate,
         };
