@@ -4,9 +4,9 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api"
 
 const useStore = create((set, get) => ({
   selectedDate: null,
-  isBackupInProgress: JSON.parse(localStorage.getItem("isBackupInProgress")) || false,
+  isBackupInProgress: JSON.parse(localStorage.getItem("isBackupInProgress") || "false"),
   backupStatus: "",
-  backupDates: new Set(JSON.parse(localStorage.getItem("backupDates")) || []),
+  backupDates: new Set(JSON.parse(localStorage.getItem("backupDates") || "[]")),
 
   setSelectedDate: (date) => set({ selectedDate: date }),
 
@@ -19,7 +19,7 @@ const useStore = create((set, get) => ({
 
   fetchBackupDates: async (startDate, endDate) => {
     try {
-      const token = localStorage.getItem("authToken");
+      const token = localStorage.getItem("authToken") || localStorage.getItem("token");
       if (!token) {
         set({ backupStatus: "Authentication token is missing. Please log in." });
         return;
@@ -51,7 +51,7 @@ const useStore = create((set, get) => ({
   addBackupDate: async () => {
     set({ isBackupInProgress: true, backupStatus: "Backup in progress..." });
     try {
-      const token = localStorage.getItem("authToken");
+      const token = localStorage.getItem("authToken") || localStorage.getItem("token");
       if (!token) {
         set({ backupStatus: "Authentication token is missing. Please log in." });
         set({ isBackupInProgress: false });
@@ -90,7 +90,7 @@ const useStore = create((set, get) => ({
   restoreBackup: async (filename) => {
     set({ isBackupInProgress: true, backupStatus: "Restoring backup..." });
     try {
-      const token = localStorage.getItem("authToken");
+      const token = localStorage.getItem("authToken") || localStorage.getItem("token");
       if (!token) {
         set({ backupStatus: "Authentication token is missing. Please log in." });
         set({ isBackupInProgress: false });

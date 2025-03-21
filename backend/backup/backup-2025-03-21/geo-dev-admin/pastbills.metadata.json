@@ -1,0 +1,1 @@
+{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"}],"uuid":"1313c5eaa808402d94f215fb5864e750","collectionName":"pastbills","type":"collection"}
