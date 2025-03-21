@@ -38,7 +38,7 @@ const LoginPage = () => {
  
       if (response.ok) {
         localStorage.setItem("user", JSON.stringify({ username, role }));
-        localStorage.setItem("authToken", data.token); // Ensure token key matches Modal.jsx
+        localStorage.setItem("token", data.token); // Ensure token key matches Modal.jsx
         
         setBackupStatus("Login successful");
         navigate(`/${role}`);

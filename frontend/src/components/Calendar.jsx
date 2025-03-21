@@ -35,7 +35,7 @@ const Calendar = ({ userRole }) => {
 
   const handleBackup = async (date) => {
     try {
-      const token = localStorage.getItem("authtoken"); // Get authentication token
+      const token = localStorage.getItem("token"); // Get authentication token
       if (!token) throw new Error("Unauthorized - No token provided");
 
       const response = await fetch("http://localhost:5000/api/backup", {

@@ -22,7 +22,7 @@ const Modal = ({ selectedDate, closeModal, handleBackup, userRole }) => {
     setHasBackup(hasExistingBackup);
   }, [formattedDate]);
 
-  const getAuthToken = () => localStorage.getItem("authToken");
+  const getAuthToken = () => localStorage.getItem("token");
 
   const updateProgress = () => {
     let currentProgress = 10;
