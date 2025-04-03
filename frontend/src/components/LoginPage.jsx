@@ -44,6 +44,7 @@ const LoginPage = () => {
         navigate(`/${role}`);
       } else {
         setError(data.msg || "Login failed");
+        throw new Error(response.status);
       }
     } catch (error) {
       console.error("Login Error:", error.message);

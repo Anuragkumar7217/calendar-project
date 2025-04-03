@@ -127,7 +127,7 @@ const Modal = ({ selectedDate, closeModal, handleBackup, userRole }) => {
 
         {authError && <p className="text-red-500 text-sm mb-2">{authError}</p>}
 
-        {!isToday(selectedDate) && <p className="text-red-500 text-sm mb-2">No backups available for the selected date.</p>}
+        {!isToday(selectedDate) && !hasBackup && <p className="text-red-500 text-sm mb-2">No backups available for the selected date.</p>}
 
         {!backupCompleted && isToday(selectedDate) && !isBackingUp && (
           <button className="px-4 py-2 rounded bg-blue-500 hover:bg-blue-700 text-white" onClick={startBackup} disabled={isBackingUp || isRestoring}>
