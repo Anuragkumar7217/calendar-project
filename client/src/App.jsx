@@ -1,57 +1,36 @@
-import { useEffect, useState } from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import "./App.css";
-import Header from "./components/Header";
-import Calendar from "./components/Calendar";
-import useStore from "./store/useStore";
-import LoginPage from "./components/LoginPage";
+import React from "react";
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import Header from "./components/Header.jsx";
+import LoginPage from "./components/LoginPage.jsx";
+import RegisterPage from "./components/RegisterPage.jsx";
+import Calendar from "./components/Calendar.jsx";
+import useAuthStore from "./store/useAuthStore"; // ✅ Import Zustand auth store
 
-function App() {
-  const initializeStore = useStore((state) => state.initializeStore);
+function AppWrapper() {
+  const { token, userRole } = useAuthStore();
+  const location = useLocation();
 
-  // Get authentication data from localStorage
-  const storedUser = JSON.parse(localStorage.getItem("user"));
-  const [isAuthenticated, setIsAuthenticated] = useState(!!storedUser);
-  const [userRole, setUserRole] = useState(storedUser?.role || null);
-
-  useEffect(() => {
-    if (initializeStore) {
-      initializeStore();
-    }
-  }, []);
+  const showHeader = token && location.pathname !== "/" && location.pathname !== "/register";
 
   return (
-    <Router>
-      <Header />
+    <>
+      {showHeader && <Header />}
       <Routes>
-        {/* Always show LoginPage first if not authenticated */}
-        <Route path="/" element={<Navigate to="/login" />} />
-        <Route path="/login" element={<LoginPage setIsAuthenticated={setIsAuthenticated} setUserRole={setUserRole} />} />
-
-        {/* Role-based routes */}
+        <Route path="/" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
         <Route
-          path="/admin"
-          element={
-            isAuthenticated && userRole === "admin" ? (
-              <Calendar userRole={userRole} />
-            ) : (
-              <Navigate to="/login" />
-            )
-          }
-        />
-        <Route
-          path="/user"
-          element={
-            isAuthenticated && userRole === "user" ? (
-              <Calendar userRole={userRole} />
-            ) : (
-              <Navigate to="/login" />
-            )
-          }
+          path="/calendar"
+          element={token ? <Calendar userRole={userRole} /> : <Navigate to="/" />}
         />
       </Routes>
-    </Router>
+    </>
   );
 }
 
-export default App;
+export default function App() {
+  return (
+    <Router>
+      <AppWrapper />
+    </Router>
+  );
+}
